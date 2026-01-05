@@ -5,70 +5,113 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SEAN BANAN AI 🍌</title>
     <style>
-        body { background-color: #FFE135; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        #banana-btn { font-size: 100px; border: 8px solid #000; border-radius: 50%; width: 180px; height: 180px; background: white; cursor: pointer; box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center; }
-        .status { margin-top: 20px; font-size: 20px; font-weight: bold; background: white; padding: 10px 20px; border-radius: 20px; border: 3px solid black; }
-        #error-log { color: red; font-size: 14px; margin-top: 15px; padding: 10px; font-weight: bold; max-width: 90%; word-break: break-all; }
+        body { 
+            background-color: #FFE135; 
+            font-family: 'Arial Black', sans-serif; 
+            text-align: center; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            height: 100vh; margin: 0; transition: background-color 0.2s;
+        }
+        h1 { color: #000; text-shadow: 2px 2px #fff; font-size: 40px; }
+        
+        #banana-btn { 
+            font-size: 100px; border: 8px solid #000; border-radius: 50%; 
+            width: 180px; height: 180px; background: white; cursor: pointer; 
+            box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center;
+            z-index: 10;
+        }
+
+        /* Animationer */
+        .dancing { animation: shake 0.3s infinite; }
+        @keyframes shake {
+            0% { transform: rotate(0deg) scale(1.1); }
+            25% { transform: rotate(10deg) scale(1.1); }
+            75% { transform: rotate(-10deg) scale(1.1); }
+            100% { transform: rotate(0deg) scale(1.1); }
+        }
+
+        .status { 
+            margin-top: 20px; font-size: 20px; font-weight: bold; 
+            background: white; padding: 10px 20px; border-radius: 20px; border: 3px solid black; 
+        }
+        #response-text { 
+            margin-top: 20px; padding: 15px; font-size: 18px; 
+            max-width: 85%; color: #000; font-weight: bold; background: rgba(255,255,255,0.5); border-radius: 10px;
+        }
     </style>
 </head>
-<body>
+<body id="bg">
 
     <h1>SHULULU! 🍌</h1>
     <button id="banana-btn">🍌</button>
     <div class="status" id="status">TRYCK HÄR KINGEN!</div>
-    <div id="error-log"></div>
+    <div id="response-text"></div>
 
     <script>
         const btn = document.getElementById('banana-btn');
         const status = document.getElementById('status');
-        const errorLog = document.getElementById('error-log');
+        const responseDiv = document.getElementById('response-text');
+        const bg = document.getElementById('bg');
 
         const API_KEY = 'AIzaSyBWIHwu3MimAIFmUxL0kQF2CoHPRxA3Hos'; 
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition ? new SpeechRecognition() : null;
-        if (recognition) recognition.lang = 'sv-SE';
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'sv-SE';
 
         btn.onclick = () => { 
-            if (!recognition) return alert("Använd Safari på din iPad!");
             recognition.start(); 
             status.innerText = "LYSSNAR... 👂"; 
-            errorLog.innerText = "";
+            responseDiv.innerText = "";
         };
 
-        if (recognition) {
-            recognition.onresult = async (event) => {
-                const speech = event.results[0][0].transcript;
-                status.innerText = "SNACKAR MED GOOGLE...";
+        recognition.onresult = async (event) => {
+            const speech = event.results[0][0].transcript;
+            status.innerText = "TÄNKER... 🤔";
 
-                try {
-                    // Vi använder den nya Gemini 2.5 Flash-Lite som syns på din bild!
-                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
-                    
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: "Svara som Sean Banan på: " + speech }] }]
-                        })
-                    });
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+                
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Du är artisten Sean Banan. Svara kort (max 2 meningar), galet och med ord som Shululu, Kingen och Rumpa. Men du MÅSTE svara på denna fråga: " + speech }] }]
+                    })
+                });
 
-                    const data = await response.json();
+                const data = await response.json();
+                const aiSvar = data.candidates[0].content.parts[0].text;
+                
+                responseDiv.innerText = aiSvar;
+                status.innerText = "DISCO!!! 💃";
+                prata(aiSvar);
 
-                    if (data.error) {
-                        errorLog.innerText = "GOOGLE-FEL: " + data.error.message;
-                        status.innerText = "KNAS!";
-                    } else if (data.candidates) {
-                        const svar = data.candidates[0].content.parts[0].text;
-                        status.innerText = "SHULULU! 🍌";
-                        const msg = new SpeechSynthesisUtterance(svar);
-                        msg.lang = 'sv-SE';
-                        msg.pitch = 1.6;
-                        window.speechSynthesis.speak(msg);
-                    }
-                } catch (e) {
-                    errorLog.innerText = "SYSTEMFEL: " + e.message;
-                }
+            } catch (e) {
+                status.innerText = "KNAS!";
+            }
+        };
+
+        function prata(text) {
+            const msg = new SpeechSynthesisUtterance(text);
+            msg.lang = 'sv-SE';
+            msg.pitch = 1.7;
+            msg.rate = 1.2;
+
+            // Starta disco och dans
+            btn.classList.add('dancing');
+            const discoInterval = setInterval(() => {
+                const colors = ['#FFE135', '#FF5555', '#55FF55', '#5555FF', '#FF55FF'];
+                bg.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            }, 200);
+
+            window.speechSynthesis.speak(msg);
+            
+            msg.onend = () => {
+                clearInterval(discoInterval);
+                bg.style.backgroundColor = '#FFE135';
+                btn.classList.remove('dancing');
+                status.innerText = "TRYCK IGEN!";
             };
         }
     </script>
