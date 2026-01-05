@@ -13,8 +13,6 @@
             height: 100vh; margin: 0; overflow: hidden;
         }
         h1 { color: #000; text-shadow: 2px 2px #fff; font-size: 40px; margin-bottom: 10px; }
-        
-        /* Banan-knappen */
         #banana-btn { 
             font-size: 120px; border: 8px solid #000; border-radius: 50%; 
             width: 220px; height: 220px; background: white; cursor: pointer; 
@@ -31,15 +29,15 @@
             100% { transform: rotate(0deg); }
         }
 
-        .status { margin-top: 30px; font-size: 24px; color: #333; font-weight: bold; background: rgba(255,255,255,0.5); padding: 10px 20px; border-radius: 20px; }
-        #response-text { margin-top: 20px; padding: 15px; font-size: 18px; max-width: 85%; min-height: 50px; color: #000; }
+        .status { margin-top: 30px; font-size: 24px; color: #333; font-weight: bold; background: rgba(255,255,255,0.8); padding: 10px 20px; border-radius: 20px; }
+        #response-text { margin-top: 20px; padding: 15px; font-size: 18px; max-width: 85%; min-height: 50px; color: #000; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <h1>SHULULU! 🍌</h1>
     <button id="banana-btn">🍌</button>
-    <div class="status" id="status">TRYCK PÅ BANANEN!</div>
+    <div class="status" id="status">TRYCK OCH SNACKA!</div>
     <div id="response-text"></div>
 
     <script>
@@ -47,22 +45,17 @@
         const status = document.getElementById('status');
         const responseDiv = document.getElementById('response-text');
 
-        // DIN NYCKEL OCH INSTRUKTIONER
-        const API_KEY = 'Sk-proj-ZEK_tvCQThv5ZaghicrtZBBlyS2qwvnelATKIgt_H941jr1D4Pjv5D5hbJPhXqms42JmRyPGSkT3BlbkFJANwfgvSvEJvO0dwVoyvmkY8rNhXhyJra8JUXwAyTjppGv7phNr4i401eDfYI-X8Y56mo2son0A'; 
-        const BANAN_LOGIC = "Du är Sean Banan. Svara kort (max 2-3 meningar), galet och med extremt mycket energi. Använd ord som Shululu, Kingen, Guss, Rumpa, Knas och Magiskt. Du älskar bananer och hatar tråkiga saker. Avsluta med något bananigt!";
+        // DIN GOOGLE API-NYCKEL
+        const API_KEY = 'AIzaSyDppccnyIeQeerSvMeneuMEiIrb-haJ9K4'; 
+        const BANAN_LOGIC = "Du är Sean Banan. Svara kort (max 2 meningar), galet och med extremt mycket energi. Använd ord som Shululu, Kingen, Guss, Rumpa, Knas och Magiskt. Avsluta med något bananigt!";
 
-        // KOLLA RÖST-STÖD
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-            alert("Tyvärr, din iPad är för gammal för röstigenkänning i webbläsaren!");
-        }
         const recognition = new SpeechRecognition();
         recognition.lang = 'sv-SE';
 
-        // LYSSNA
         btn.onclick = () => {
             recognition.start();
-            status.innerText = "LYSSNAR... SNACKA PÅ!";
+            status.innerText = "LYSSNAR... 👂";
             btn.classList.add('listening');
         };
 
@@ -72,49 +65,40 @@
             status.innerText = "TÄNKER UT KNAS...";
 
             try {
-                // SKICKA TILL OPENAI
-                const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                // ANROP TILL GOOGLE GEMINI (GRATIS)
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+                
+                const response = await fetch(url, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${API_KEY}`
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        model: "gpt-4o-mini",
-                        messages: [
-                            { role: "system", content: BANAN_LOGIC },
-                            { role: "user", content: userSpeech }
-                        ]
+                        contents: [{ parts: [{ text: BANAN_LOGIC + " Användaren säger: " + userSpeech }] }]
                     })
                 });
 
                 const data = await response.json();
-                const aiSvar = data.choices[0].message.content;
                 
-                responseDiv.innerText = aiSvar;
-                status.innerText = "SKAKAR RUMPA!";
-                
-                prata(aiSvar);
+                if (data.candidates && data.candidates[0].content.parts[0].text) {
+                    const aiSvar = data.candidates[0].content.parts[0].text;
+                    responseDiv.innerText = aiSvar;
+                    status.innerText = "SKAKAR RUMPA!";
+                    prata(aiSvar);
+                } else {
+                    throw new Error("Inget svar från Sean");
+                }
 
             } catch (error) {
-                status.innerText = "KNAS! Funkar inte...";
+                status.innerText = "KNAS! Kolla nyckeln...";
                 console.error(error);
             }
         };
 
-        // PRATA (iPad-talsyntes)
         function prata(text) {
-            // Rensa gamla röster
             window.speechSynthesis.cancel();
-            
             const msg = new SpeechSynthesisUtterance(text);
             msg.lang = 'sv-SE';
-            
-            // Sean Banan-inställningar på rösten
-            msg.pitch = 1.6; // Pipigare röst
-            msg.rate = 1.3;  // Snabbare röst
-            msg.volume = 1.0;
-
+            msg.pitch = 1.7; // Sean Banan-tonläge
+            msg.rate = 1.3;  
             window.speechSynthesis.speak(msg);
             
             msg.onend = () => {
@@ -124,3 +108,4 @@
     </script>
 </body>
 </html>
+
