@@ -8,7 +8,7 @@
         body { background-color: #FFE135; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; transition: background-color 0.2s; }
         #banana-btn { font-size: 100px; border: 8px solid #000; border-radius: 50%; width: 180px; height: 180px; background: white; cursor: pointer; box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center; }
         .status { margin-top: 20px; font-size: 20px; font-weight: bold; background: white; padding: 10px 20px; border-radius: 20px; border: 3px solid black; }
-        #debug-box { color: #555; font-size: 10px; margin-top: 20px; font-family: monospace; background: rgba(255,255,255,0.8); padding: 5px; border-radius: 5px; max-width: 90%; word-break: break-all; }
+        #debug-box { color: #555; font-size: 11px; margin-top: 20px; font-family: monospace; background: rgba(255,255,255,0.8); padding: 8px; border-radius: 5px; max-width: 90%; word-break: break-all; }
         .dancing { animation: shake 0.3s infinite; }
         @keyframes shake { 0% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
     </style>
@@ -34,35 +34,40 @@
         btn.onclick = () => { 
             recognition.start(); 
             status.innerText = "LYSSNAR... 👂"; 
-            debug.innerText = "Lyssnar på din röst...";
+            debug.innerText = "Hör jag dig?";
         };
 
         recognition.onresult = async (event) => {
             const speech = event.results[0][0].transcript;
             status.innerText = "SNACKAR MED GOOGLE...";
-            debug.innerText = "Skickar till Gemini 2.5 Flash-Lite...";
+            debug.innerText = "Anropar Gemini 3 Flash...";
 
             try {
-                // Vi använder den modell du hittade: gemini-2.5-flash-lite
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 sekunder timeout
+
+                // Vi testar Gemini 3 Flash från din bild!
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash:generateContent?key=${API_KEY}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Du är Sean Banan. Svara kort, galet och med mycket energi på: " + speech }] }]
-                    })
+                        contents: [{ parts: [{ text: "Du är Sean Banan. Svara kort och super-energiskt på: " + speech }] }]
+                    }),
+                    signal: controller.signal
                 });
 
+                clearTimeout(timeoutId);
                 const data = await response.json();
 
                 if (data.error) {
-                    debug.innerText = "GOOGLE ERROR: " + data.error.message;
+                    debug.innerText = "FEL: " + data.error.message;
                     status.innerText = "KNAS!";
                 } else {
                     const svar = data.candidates[0].content.parts[0].text;
                     status.innerText = "SHULULU! 🍌";
-                    debug.innerText = "Svar mottaget!";
+                    debug.innerText = "Svarat!";
                     startDisco();
                     const msg = new SpeechSynthesisUtterance(svar);
                     msg.lang = 'sv-SE';
@@ -71,8 +76,8 @@
                     msg.onend = stopDisco;
                 }
             } catch (e) {
-                status.innerText = "SYSTEMFEL!";
-                debug.innerText = "FETCH ERROR: " + e.message;
+                status.innerText = "FASTNAT!";
+                debug.innerText = e.name === 'AbortError' ? "Google svarar inte i tid!" : "FEL: " + e.message;
             }
         };
 
@@ -94,6 +99,7 @@
     </script>
 </body>
 </html>
+
 
 
 
