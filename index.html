@@ -6,9 +6,9 @@
     <title>SEAN BANAN AI 🍌</title>
     <style>
         body { background-color: #FFE135; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        #banana-btn { font-size: 100px; border: 8px solid #000; border-radius: 50%; width: 180px; height: 180px; background: white; cursor: pointer; box-shadow: 0 10px 0 #ccb100; }
+        #banana-btn { font-size: 100px; border: 8px solid #000; border-radius: 50%; width: 180px; height: 180px; background: white; cursor: pointer; box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center; }
         .status { margin-top: 20px; font-size: 20px; font-weight: bold; background: white; padding: 10px 20px; border-radius: 20px; border: 3px solid black; }
-        #error-log { color: red; font-size: 12px; margin-top: 10px; padding: 10px; }
+        #error-log { color: red; font-size: 14px; margin-top: 15px; padding: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -23,7 +23,6 @@
         const status = document.getElementById('status');
         const errorLog = document.getElementById('error-log');
 
-        // DIN NYCKEL (Håll den här raden uppdaterad)
         const API_KEY = 'AIzaSyBWIHwu3MimAIFmUxL0kQF2CoHPRxA3Hos'; 
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -41,27 +40,23 @@
             status.innerText = "SNACKAR MED GOOGLE...";
 
             try {
-                // VI ANVÄNDER v1 VERSIONEN ISTÄLLET FÖR v1beta FÖR ATT SLIPPA 404
-const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
-
-
-
+                // Vi använder den här länken som visade sig fungera bäst i dina loggar
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
                 
-const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        contents: [{ parts: [{ text: "Svara som Sean Banan på: " + speech }] }]
-    })
-});
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: "Du är Sean Banan. Svara kort och galet som en kung på detta: " + speech }] }]
+                    })
+                });
 
-
-                const data = await resp.json();
+                const data = await response.json();
 
                 if (data.error) {
-                    errorLog.innerText = "GOOGLE SÄGER: " + data.error.message;
-                    status.innerText = "KNAS! Kolla röda texten.";
-                } else {
+                    errorLog.innerText = "GOOGLE-FEL: " + data.error.message;
+                    status.innerText = "KNAS!";
+                } else if (data.candidates && data.candidates[0].content) {
                     const svar = data.candidates[0].content.parts[0].text;
                     status.innerText = "SHULULU! 🍌";
                     
@@ -69,6 +64,8 @@ const response = await fetch(url, {
                     msg.lang = 'sv-SE';
                     msg.pitch = 1.6;
                     window.speechSynthesis.speak(msg);
+                } else {
+                    errorLog.innerText = "Inget svar i paketet från Google.";
                 }
             } catch (e) {
                 errorLog.innerText = "SYSTEMFEL: " + e.message;
