@@ -5,10 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SEAN BANAN AI 🍌</title>
     <style>
-        body { background-color: #FFE135; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; transition: background-color 0.2s; }
-        #banana-btn { font-size: 100px; border: 8px solid #000; border-radius: 50%; width: 180px; height: 180px; background: white; cursor: pointer; box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center; }
+        body { background-color: #FFE135; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; transition: background-color 0.2s; padding-bottom: 50px; }
+        #banana-btn { font-size: 100px; border: 8px solid #000; border-radius: 50%; width: 180px; height: 180px; background: white; cursor: pointer; box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center; margin-top: 20px; }
         .status { margin-top: 20px; font-size: 20px; font-weight: bold; background: white; padding: 10px 20px; border-radius: 20px; border: 3px solid black; }
-        #debug-box { color: #444; font-size: 11px; margin-top: 20px; font-family: monospace; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 8px; max-width: 90%; word-break: break-all; border: 1px solid #ccc; }
+        
+        /* Historik-lista */
+        #history { margin-top: 30px; width: 90%; max-width: 400px; background: rgba(255,255,255,0.8); border-radius: 15px; padding: 15px; border: 2px solid #000; text-align: left; max-height: 200px; overflow-y: auto; }
+        .chat-row { margin-bottom: 10px; font-size: 14px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+        .user-text { color: #555; font-style: italic; }
+        .sean-text { color: #d35400; font-weight: bold; }
+
+        #debug-box { color: #444; font-size: 11px; margin-top: 10px; font-family: monospace; }
         .dancing { animation: shake 0.3s infinite; }
         @keyframes shake { 0% { transform: rotate(5deg); } 50% { transform: rotate(-5deg); } 100% { transform: rotate(5deg); } }
     </style>
@@ -17,15 +24,20 @@
     <h1>SHULULU! 🍌</h1>
     <button id="banana-btn">🍌</button>
     <div class="status" id="status">TRYCK HÄR KINGEN!</div>
-    <div id="debug-box">Status: Redo för Gemini 3!</div>
+    <div id="debug-box">Status: Redo!</div>
+
+    <div id="history">
+        <div style="text-align:center; font-weight:bold; margin-bottom:5px;">BANAN-LOGG:</div>
+        <div id="chat-content"></div>
+    </div>
 
     <script>
         const btn = document.getElementById('banana-btn');
         const status = document.getElementById('status');
         const bg = document.getElementById('bg');
         const debug = document.getElementById('debug-box');
+        const chatContent = document.getElementById('chat-content');
 
-        // Din API-nyckel
         const API_KEY = 'AIzaSyBWIHwu3MimAIFmUxL0kQF2CoHPRxA3Hos'; 
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -35,49 +47,50 @@
         btn.onclick = () => { 
             recognition.start(); 
             status.innerText = "LYSSNAR... 👂"; 
-            debug.innerText = "Hör jag dig?";
         };
 
         recognition.onresult = async (event) => {
             const speech = event.results[0][0].transcript;
             status.innerText = "SNACKAR MED SEAN...";
-            debug.innerText = "Anropar Gemini 3 Flash Preview...";
 
             try {
-                // EXAKT URL FÖR GEMINI 3 FLASH PREVIEW
                 const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${API_KEY}`;
                 
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Du är Sean Banan. Svara kort, galet och med ord som Shululu på: " + speech }] }]
+                        contents: [{ parts: [{ text: "Du är artisten Sean Banan. Svara kort (max 2 meningar), galet och med ord som Shululu, Kingen och Rumpa. Du MÅSTE svara på användarens fråga: " + speech }] }]
                     })
                 });
 
                 const data = await response.json();
+                const aiSvar = data.candidates[0].content.parts[0].text;
+                
+                // Lägg till i historiken
+                addToHistory(speech, aiSvar);
 
-                if (data.error) {
-                    debug.innerText = "GOOGLE-FEL: " + data.error.message;
-                    status.innerText = "KNAS!";
-                } else if (data.candidates && data.candidates[0].content) {
-                    const svar = data.candidates[0].content.parts[0].text;
-                    status.innerText = "SHULULU! 🍌";
-                    debug.innerText = "Svar mottaget från Gemini 3!";
-                    startDisco();
-                    const msg = new SpeechSynthesisUtterance(svar);
-                    msg.lang = 'sv-SE';
-                    msg.pitch = 1.7;
-                    window.speechSynthesis.speak(msg);
-                    msg.onend = stopDisco;
-                } else {
-                    debug.innerText = "Inget innehåll i svaret: " + JSON.stringify(data);
-                }
+                status.innerText = "SHULULU! 🍌";
+                startDisco();
+                
+                const msg = new SpeechSynthesisUtterance(aiSvar);
+                msg.lang = 'sv-SE';
+                msg.pitch = 1.7;
+                window.speechSynthesis.speak(msg);
+                msg.onend = stopDisco;
+
             } catch (e) {
-                status.innerText = "SYSTEMFEL!";
-                debug.innerText = "FETCH ERROR: " + e.message;
+                status.innerText = "KNAS!";
+                debug.innerText = "Fel: " + e.message;
             }
         };
+
+        function addToHistory(user, sean) {
+            const row = document.createElement('div');
+            row.className = 'chat-row';
+            row.innerHTML = `<span class="user-text">Du: ${user}</span><br><span class="sean-text">Sean: ${sean}</span>`;
+            chatContent.prepend(row); // Lägger det senaste överst
+        }
 
         let discoIdx;
         function startDisco() {
@@ -97,6 +110,7 @@
     </script>
 </body>
 </html>
+
 
 
 
