@@ -42,18 +42,19 @@
 
             try {
                 // VI ANVÄNDER v1 VERSIONEN ISTÄLLET FÖR v1beta FÖR ATT SLIPPA 404
-const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${API_KEY}`;
+const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
 
 
 
                 
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: "Du är Sean Banan. Svara kort och galet på: " + speech }] }]
-                    })
-                });
+const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+        contents: [{ parts: [{ text: "Svara som Sean Banan på: " + speech }] }]
+    })
+});
+
 
                 const data = await resp.json();
 
