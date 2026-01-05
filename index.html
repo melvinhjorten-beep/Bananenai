@@ -5,22 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>SEAN BANAN AI 🍌</title>
     <style>
-        body { 
-            background-color: #FFE135; 
-            font-family: 'Arial Black', sans-serif; 
-            text-align: center; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            height: 100vh; margin: 0; 
-        }
-        #banana-btn { 
-            font-size: 100px; border: 8px solid #000; border-radius: 50%; 
-            width: 180px; height: 180px; background: white; cursor: pointer; 
-            box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center; 
-        }
-        .status { 
-            margin-top: 20px; font-size: 20px; font-weight: bold; 
-            background: white; padding: 10px 20px; border-radius: 20px; border: 3px solid black; 
-        }
+        body { background-color: #FFE135; font-family: 'Arial Black', sans-serif; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        #banana-btn { font-size: 100px; border: 8px solid #000; border-radius: 50%; width: 180px; height: 180px; background: white; cursor: pointer; box-shadow: 0 10px 0 #ccb100; display: flex; align-items: center; justify-content: center; }
+        .status { margin-top: 20px; font-size: 20px; font-weight: bold; background: white; padding: 10px 20px; border-radius: 20px; border: 3px solid black; }
         #error-log { color: red; font-size: 14px; margin-top: 15px; padding: 10px; font-weight: bold; max-width: 90%; word-break: break-all; }
     </style>
 </head>
@@ -36,21 +23,14 @@
         const status = document.getElementById('status');
         const errorLog = document.getElementById('error-log');
 
-        // DIN NYA NYCKEL ÄR INLAGD HÄR:
         const API_KEY = 'AIzaSyBWIHwu3MimAIFmUxL0kQF2CoHPRxA3Hos'; 
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         const recognition = new SpeechRecognition ? new SpeechRecognition() : null;
-        
-        if (recognition) {
-            recognition.lang = 'sv-SE';
-        }
+        if (recognition) recognition.lang = 'sv-SE';
 
         btn.onclick = () => { 
-            if (!recognition) {
-                alert("Röstigenkänning stöds inte i denna webbläsare. Prova Safari!");
-                return;
-            }
+            if (!recognition) return alert("Använd Safari på din iPad!");
             recognition.start(); 
             status.innerText = "LYSSNAR... 👂"; 
             errorLog.innerText = "";
@@ -62,14 +42,14 @@
                 status.innerText = "SNACKAR MED GOOGLE...";
 
                 try {
-                    // Vi använder v1 och gemini-1.5-flash
-                    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${API_KEY}`;
+                    // Vi använder den nya Gemini 2.5 Flash-Lite som syns på din bild!
+                    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-lite:generateContent?key=${API_KEY}`;
                     
                     const response = await fetch(url, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            contents: [{ parts: [{ text: "Du är Sean Banan. Svara kort och med extremt mycket energi på: " + speech }] }]
+                            contents: [{ parts: [{ text: "Svara som Sean Banan på: " + speech }] }]
                         })
                     });
 
@@ -78,16 +58,13 @@
                     if (data.error) {
                         errorLog.innerText = "GOOGLE-FEL: " + data.error.message;
                         status.innerText = "KNAS!";
-                    } else if (data.candidates && data.candidates[0].content) {
+                    } else if (data.candidates) {
                         const svar = data.candidates[0].content.parts[0].text;
                         status.innerText = "SHULULU! 🍌";
-                        
                         const msg = new SpeechSynthesisUtterance(svar);
                         msg.lang = 'sv-SE';
                         msg.pitch = 1.6;
                         window.speechSynthesis.speak(msg);
-                    } else {
-                        errorLog.innerText = "Kunde inte läsa svaret från Google.";
                     }
                 } catch (e) {
                     errorLog.innerText = "SYSTEMFEL: " + e.message;
@@ -97,6 +74,7 @@
     </script>
 </body>
 </html>
+
 
 
 
